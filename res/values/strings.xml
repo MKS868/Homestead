@@ -734,7 +734,7 @@
   <string name="tm_unpin">Unpin</string>
   <string name="tm_unpin_help">Back to its place in the sort order.</string>
   <string name="tm_move">Move</string>
-  <string name="tm_move_help">Left and Right move it one place, Up and Down one line. OK or Back puts it down. A tile that is not pinned is pinned first.</string>
+  <string name="tm_move_help">Left and Right move it one place, Up and Down one line. OK or Back puts it down. A tile that is not pinned is pinned first, and so are the tiles it moves past, so everything before it keeps its place.</string>
   <string name="tm_hide">Hide</string>
   <string name="tm_hide_help">Only this launcher stops drawing it; nothing is disabled or uninstalled. Hidden tiles are listed under Settings → Home screen.</string>
   <string name="tm_moving">Moving %1$s: Left and Right move it, OK or Back puts it down.</string>

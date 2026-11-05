@@ -730,7 +730,7 @@
   <string name="tm_unpin">Désépingler</string>
   <string name="tm_unpin_help">Elle reprend sa place dans l\'ordre de tri.</string>
   <string name="tm_move">Déplacer</string>
-  <string name="tm_move_help">Gauche et Droite la déplacent d\'une place, Haut et Bas d\'une ligne. OK ou Retour la repose. Une tuile non épinglée est d\'abord épinglée.</string>
+  <string name="tm_move_help">Gauche et Droite la déplacent d\'une place, Haut et Bas d\'une ligne. OK ou Retour la repose. Une tuile non épinglée est d\'abord épinglée, ainsi que les tuiles qu\'elle dépasse, pour que tout ce qui la précède garde sa place.</string>
   <string name="tm_hide">Masquer</string>
   <string name="tm_hide_help">Seul ce lanceur cesse de l\'afficher ; rien n\'est désactivé ni désinstallé. Les tuiles masquées sont listées dans Réglages → Écran d\'accueil.</string>
   <string name="tm_moving">Déplacement de %1$s : Gauche et Droite la déplacent, OK ou Retour la repose.</string>

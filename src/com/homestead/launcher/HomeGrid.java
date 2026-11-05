@@ -731,8 +731,9 @@ public class HomeGrid implements SettingsPanel.Host {
         if (code == android.view.KeyEvent.KEYCODE_DPAD_LEFT) return -1;
         if (code == android.view.KeyEvent.KEYCODE_DPAD_RIGHT) return 1;
         View cell = cellsByKey.get(moving);
-        boolean inRow = cell != null && cell.getParent() != null
-                && ((View) cell.getParent()).getParent() instanceof HorizontalScrollView;
+        // The glass panel's round icons sit one level deeper, in a column with their name.
+        boolean inRow = cell != null && (roundCells.contains(cell) || (cell.getParent() != null
+                && ((View) cell.getParent()).getParent() instanceof HorizontalScrollView));
         if (inRow) return 0;
         int cols = AppModel.columns(ctx);
         return code == android.view.KeyEvent.KEYCODE_DPAD_UP ? -cols : cols;
@@ -752,32 +753,48 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     /**
-     * Shift the picked-up tile by step places among the pinned tiles shown in its row, save
-     * the order and redraw with the tile still lit. Past either end of the pinned run it
-     * stays put: the unpinned tiles follow the sort setting and are not traded with.
+     * Shift the picked-up tile by step places among the tiles shown in its row, save the
+     * order and redraw with the tile still lit. Only pinned tiles hold a place (the rest
+     * follow the sort setting), so a tile moved past the pinned run pins the tiles it passed,
+     * in the order they are drawn: everything before its new place keeps where it is.
      * @return true if it moved.
      */
     private boolean moveTile(String key, int step) {
         AppModel.Item it = itemFor(key);
         if (it == null || !cellsByKey.containsKey(key)) { stopMoving(); return false; }
-        List<String> pins = Prefs.pinned(ctx);
-        if (!pins.contains(key)) pins.add(key);
+        // The row as drawn: its pinned run, then the sort order. The glass bar's pills are
+        // not part of any row.
         int row = rowOf(it);
         List<AppModel.Item> shown = AppModel.visibleItems(ctx);
-        List<String> run = new ArrayList<String>();
-        for (int i = 0; i < pins.size(); i++) {
-            for (int j = 0; j < shown.size(); j++) {
-                AppModel.Item s = shown.get(j);
-                if (pins.get(i).equals(s.key()) && rowOf(s) == row) { run.add(pins.get(i)); break; }
+        List<String> line = new ArrayList<String>();
+        for (int i = 0; i < shown.size(); i++) {
+            String k = shown.get(i).key();
+            if (rowOf(shown.get(i)) == row && cellsByKey.containsKey(k) && !pillsByKey.containsKey(k)) {
+                line.add(k);
             }
         }
-        int at = run.indexOf(key);
-        int to = Math.max(0, Math.min(run.size() - 1, at + step));
+        int at = line.indexOf(key);
+        if (at < 0) return false;
+        int to = Math.max(0, Math.min(line.size() - 1, at + step));
         if (to == at) return false;
-        String anchor = run.get(to);
-        pins.remove(key);
-        pins.add(pins.indexOf(anchor) + (step < 0 ? 0 : 1), key);
-        Prefs.setPinned(ctx, pins);
+
+        List<String> pins = Prefs.pinned(ctx);
+        int pinnedLead = 0;
+        while (pinnedLead < line.size() && pins.contains(line.get(pinnedLead))) pinnedLead++;
+        line.remove(at);
+        line.add(to, key);
+        List<String> rowPins = new ArrayList<String>(line.subList(0, Math.max(pinnedLead, to + 1)));
+
+        // This row's pins become the new lead of the row; other rows' pins keep their order.
+        List<String> out = new ArrayList<String>();
+        boolean placed = false;
+        for (int i = 0; i < pins.size(); i++) {
+            String p = pins.get(i);
+            if (!line.contains(p)) { out.add(p); continue; }
+            if (!placed) { out.addAll(rowPins); placed = true; }
+        }
+        if (!placed) out.addAll(rowPins);
+        Prefs.setPinned(ctx, out);
         reorder(key);
         return true;
     }
