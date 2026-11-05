@@ -56,6 +56,35 @@ final class AppArt {
         return draw("applications", GENERIC_TOP, GENERIC_BOTTOM, px);
     }
 
+    private static final int CONSOLE_TOP = 0xFF2D6BE0;
+    private static final int CONSOLE_BOTTOM = 0xFF0A1B52;
+    /** The PS5 tile's glow in the dock design. */
+    static final int CONSOLE_ACCENT = 0xFF1E4FB8;
+
+    /** The PS5 tile's banner, w by h: the gamepad line icon and the name on a deep blue. */
+    static Bitmap console(int w, int h, String name) {
+        Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        Paint bg = new Paint(Paint.ANTI_ALIAS_FLAG);
+        bg.setShader(new LinearGradient(0, 0, w, h, CONSOLE_TOP, CONSOLE_BOTTOM, Shader.TileMode.CLAMP));
+        c.drawRect(0, 0, w, h, bg);
+
+        Paint text = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+        text.setColor(0xFFFFFFFF);
+        text.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
+        text.setTextSize(h * 0.30f);
+        int g = Math.round(h * 0.46f);
+        float gap = h * 0.10f;
+        float tw = text.measureText(name);
+        float x = (w - (g + gap + tw)) / 2f;
+        Bitmap line = ShortcutIcons.render("gamepad", g);
+        c.drawBitmap(line, x, (h - g) / 2f, new Paint(Paint.FILTER_BITMAP_FLAG));
+        line.recycle();
+        Paint.FontMetrics fm = text.getFontMetrics();
+        c.drawText(name, x + g + gap, h / 2f - (fm.ascent + fm.descent) / 2f, text);
+        return b;
+    }
+
     private static Bitmap draw(String glyph, int top, int bottom, int px) {
         Bitmap b = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);

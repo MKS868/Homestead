@@ -33,6 +33,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 
@@ -256,6 +257,7 @@ public class HomeRedirectService extends AccessibilityService {
     private final Messenger fromWatcher = new Messenger(new Handler(Looper.getMainLooper()) {
         public void handleMessage(Message m) {
             if (m.what == HomeKeyWatcher.MSG_HOME) onHomeKey(m.arg1);
+            if (m.what == HomeKeyWatcher.MSG_APP_KEY) onAppKey(m.arg1, m.arg2 == 0);
         }
     });
 
@@ -317,6 +319,75 @@ public class HomeRedirectService extends AccessibilityService {
         }
         attach();
     }
+
+    // ---------------------------------------------------------------- Disney+ button
+
+    /** The remote's Disney+ button, as device control numbers it (APP_KEY_4). */
+    private static final int DISNEY_BUTTON = 4;
+    /** How long after the press the screen the button opens is closed again. */
+    private static final long DISMISS_MS = 6000L;
+    /**
+     * The Appstore first shows a stand-in screen that closes itself, then its Disney+ page,
+     * or brings back the page already open: Back is pressed once its screens stop changing.
+     */
+    private static final long DISMISS_SETTLE_MS = 1000L;
+    private static final int DISMISS_TRIES = 3;
+    /** What the button opens: Disney+, or its Appstore page while it is not installed. */
+    private static final String DISNEY_PKG = "com.disney.disneyplus";
+    /**
+     * Amazon's "content personalization" question, which Fire OS can put up before the
+     * Appstore page. Back closes it without an answer, so it is asked again another time.
+     */
+    private static final String OPT_IN_PKG = "com.amazon.tv.developer.dataservice";
+    private long dismissUntil;
+    private int dismissTries;
+
+    /**
+     * The Disney+ button switches the TV to the PS5 instead, when Settings says so. Fire OS
+     * still opens Disney+ (or its Appstore page), which is closed again as it comes up. The
+     * switch waits for the release: Amazon's equipment control first has the remote send the
+     * TV its own input over infrared, and only logs the release once that is done, so
+     * switching earlier was undone by it.
+     */
+    private void onAppKey(int button, boolean press) {
+        if (button != DISNEY_BUTTON || !Prefs.hasConsole(this) || !Prefs.disneyToConsole(this)) return;
+        if (press) {
+            Log.i(TAG, "Disney+ button: switching to the PS5 once it is released");
+            dismissUntil = SystemClock.elapsedRealtime() + DISMISS_MS;
+            dismissTries = 0;
+            Toast.makeText(this, getString(R.string.tv_switching, getString(R.string.console_name)),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        LgTv.switchInput(this, Prefs.consoleInput(this), getString(R.string.console_name));
+    }
+
+    private static boolean isDisneyScreen(CharSequence pkg) {
+        return pkg != null && (AppModel.APPSTORE_PKG.contentEquals(pkg) || DISNEY_PKG.contentEquals(pkg)
+                || OPT_IN_PKG.contentEquals(pkg));
+    }
+
+    /** A window came up while the Disney+ button's screen is to be closed: wait for it to settle. */
+    private void dismissDisney(CharSequence pkg) {
+        if (dismissUntil == 0L || !isDisneyScreen(pkg)) return;
+        if (SystemClock.elapsedRealtime() > dismissUntil) { dismissUntil = 0L; return; }
+        handler.removeCallbacks(disneyBack);
+        handler.postDelayed(disneyBack, DISMISS_SETTLE_MS);
+    }
+
+    /** Back out of the Disney+ screen while it is in front, checking again after each press. */
+    private final Runnable disneyBack = new Runnable() {
+        public void run() {
+            if (dismissUntil == 0L || !isDisneyScreen(lastForeground) || dismissTries >= DISMISS_TRIES) {
+                dismissUntil = 0L;
+                return;
+            }
+            dismissTries++;
+            Log.i(TAG, lastForeground + " opened by the Disney+ button, closing it");
+            performGlobalAction(GLOBAL_ACTION_BACK);
+            handler.postDelayed(this, DISMISS_SETTLE_MS);
+        }
+    };
 
     /** Amazon's settings app, and its uid once looked up. */
     private static final String SETTINGS_PKG = "com.amazon.tv.settings.v2";
@@ -764,6 +835,7 @@ public class HomeRedirectService extends AccessibilityService {
             if (c == null || !c.toString().endsWith("Activity")) return;
         }
         lastForeground = p.toString();
+        dismissDisney(p);
 
         if (isSettingsWindow(p, e.getClassName())) {
             enterSettings("Amazon settings in front");

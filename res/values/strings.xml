@@ -751,4 +751,14 @@
   <string name="set_apps_one">Apps in one row</string>
   <string name="set_apps_one_help">TV apps and the other apps together in one grid, sorted as one list. The other apps get wide tiles made from their icons.</string>
   <string name="ro_in_apps">in Apps</string>
+  <string name="console_name">PS5</string>
+  <string name="tv_switching">Switching the TV to %1$s…</string>
+  <string name="tv_switch_failed">Could not switch the TV to %1$s. It needs to be an LG TV on the same network as this Fire TV.</string>
+  <string name="tv_allow_prompt">Your TV is asking whether to allow Homestead. Choose Allow with the LG remote; this is only needed once.</string>
+  <string name="set_console">PS5 tile</string>
+  <string name="set_console_help">A big tile that switches the TV to the PS5, on the HDMI input chosen here. It works with an LG TV on the same network: the first time, the TV asks whether to allow Homestead.</string>
+  <string name="set_disney">Disney+ button</string>
+  <string name="set_disney_console">Switches to PS5</string>
+  <string name="set_disney_app">Opens Disney+</string>
+  <string name="set_disney_help">The remote\'s Disney+ button can switch the TV to the PS5 instead, a few seconds after it is pressed (Fire TV first checks the TV is on its own input). Needs the PS5 tile on.</string>
 </resources>

@@ -69,12 +69,18 @@ public final class AppModel {
      * scId its id in FireTvSettingsPanel.SCREENS (null for the top bar's own pills).
      */
     public static final int TYPE_SHORTCUT = 7;
+    /**
+     * The PS5: a big tile among the TV apps that switches the TV (an LG) to the PS5's input
+     * over the network, see LgTv. inputId holds the TV's name for that input ("HDMI_4").
+     */
+    public static final int TYPE_CONSOLE = 8;
 
     static final String LIVETV_PKG = "com.amazon.tv.livetv";
     static final String LIVETV_SVC = "com.amazon.tv.livetv.TuneService";
     /** Item.key() of the Live TV tile; also how it is stored when hidden. */
     static final String LIVETV_KEY = "sys:livetv";
     static final String RESTORE_KEY = "sys:restore";
+    static final String CONSOLE_KEY = "tv:console";
     /** Shortcut actions that are not an Amazon settings screen: the top bar's own two pills. */
     static final String SC_MORE = "homestead:more";
     static final String SC_SETTINGS = "homestead:settings";
@@ -144,6 +150,7 @@ public final class AppModel {
             if (type == TYPE_LIVETV) return LIVETV_KEY;
             if (type == TYPE_RESTORE) return RESTORE_KEY;
             if (type == TYPE_SHORTCUT) return "sc:" + cls;
+            if (type == TYPE_CONSOLE) return CONSOLE_KEY;
             if (type == TYPE_AMAZON_HOME) return "amz";
             if (type == TYPE_SETTINGS) return "sys:settings";
             if (type == TYPE_HEALTH) return "sys:health";
@@ -268,6 +275,7 @@ public final class AppModel {
         boolean wide = Prefs.nonTvWide(c) || Prefs.appsOneRow(c);
 
         loadShortcuts(c);
+        loadConsole(c);
 
         PackageManager pm = c.getPackageManager();
         Set<String> seen = new HashSet<String>();
@@ -443,6 +451,19 @@ public final class AppModel {
             it.icon = ShortcutIcons.render(s[FireTvSettingsPanel.ID], ICON_PX);
             ITEMS.add(it);
         }
+    }
+
+    /** The PS5 tile, unless switched off in Settings. Its banner is drawn, like AppArt's icons. */
+    private static void loadConsole(Context c) {
+        if (!Prefs.hasConsole(c)) return;
+        Item it = new Item();
+        it.type = TYPE_CONSOLE;
+        it.inputId = Prefs.consoleInput(c);
+        it.label = c.getString(R.string.console_name);
+        it.tvApp = true;
+        it.banner = AppArt.console(BANNER_SCALE * cellW, BANNER_SCALE * cellH, it.label);
+        it.accent = AppArt.CONSOLE_ACCENT;
+        ITEMS.add(it);
     }
 
     /** Whether the restore tile is in the model. */
@@ -861,7 +882,7 @@ public final class AppModel {
             private int group(int t) {
                 if (t == TYPE_RESTORE) return 0;
                 if (t == TYPE_SHORTCUT) return 2;
-                if (t == TYPE_APP) return 3;
+                if (t == TYPE_APP || t == TYPE_CONSOLE) return 3;
                 return 1;
             }
             private int rank(int t) {
@@ -869,7 +890,7 @@ public final class AppModel {
                 if (t == TYPE_LIVETV) return 0;
                 if (t == TYPE_INPUT) return 1;
                 if (t == TYPE_AMAZON_HOME || t == TYPE_SETTINGS || t == TYPE_HEALTH
-                        || t == TYPE_SHORTCUT) return 2;
+                        || t == TYPE_SHORTCUT || t == TYPE_CONSOLE) return 2;
                 return 3;
             }
         });

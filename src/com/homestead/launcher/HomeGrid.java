@@ -763,6 +763,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private int rowOf(AppModel.Item it) {
         if (it.type == AppModel.TYPE_RESTORE) return 0;
         if (it.type == AppModel.TYPE_SHORTCUT) return 2;
+        if (it.type == AppModel.TYPE_CONSOLE) return 3;
         if (it.type != AppModel.TYPE_APP) return 1;
         if (it.banner != null && (it.tvApp || Prefs.appsOneRow(ctx))) return 3;
         return 4;
@@ -2621,6 +2622,11 @@ public class HomeGrid implements SettingsPanel.Host {
             i.putExtra(HdmiActivity.EXTRA_LABEL, it.label);
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try { ctx.startActivity(i); } catch (Throwable t) { }
+            return;
+        }
+        if (it.type == AppModel.TYPE_CONSOLE) {
+            logOpen(it.label);
+            LgTv.switchInput(ctx, it.inputId, it.label);
             return;
         }
         if (it.type == AppModel.TYPE_AMAZON_HOME) {

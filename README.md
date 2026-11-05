@@ -30,6 +30,11 @@ Both pictures are from the same TV, a few minutes apart.
   profile screen) get a drawn replacement instead.
 - **Big or small, your choice.** Any app without a banner can join the TV apps: press MENU
   on it and choose **Show as big tile** (and **Show as small icon** to put it back).
+- **A PS5 tile, and the Disney+ button as a PS5 button.** On a Fire TV stick plugged into an
+  LG webOS TV, a big **PS5** tile switches the TV to the PS5's HDMI input over the home
+  network (the TV asks once whether to allow Homestead). The remote's Disney+ button can do
+  the same, a few seconds after the press, once Fire TV has checked the TV is on its own
+  input. The input, or Off, and the button are set in Settings under **PS5**.
 - **The Home button comes here.** Pressing Home opens Homestead in about 170 ms instead of
   Amazon's home screen.
 - **HDMI and Composite inputs as tiles**, so switching source is one press from home.

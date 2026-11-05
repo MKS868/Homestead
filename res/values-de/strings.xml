@@ -751,4 +751,14 @@
   <string name="set_apps_one">Apps in einer Zeile</string>
   <string name="set_apps_one_help">TV-Apps und die übrigen Apps zusammen in einem Raster, als eine Liste sortiert. Die übrigen Apps bekommen breite Kacheln aus ihren Symbolen.</string>
   <string name="ro_in_apps">in Anwendungen</string>
+  <string name="console_name">PS5</string>
+  <string name="tv_switching">Fernseher wird auf %1$s umgeschaltet…</string>
+  <string name="tv_switch_failed">Der Fernseher konnte nicht auf %1$s umgeschaltet werden. Es muss ein LG-Fernseher im selben Netzwerk wie dieser Fire TV sein.</string>
+  <string name="tv_allow_prompt">Ihr Fernseher fragt, ob Homestead erlaubt werden soll. Wählen Sie mit der LG-Fernbedienung Zulassen; das ist nur einmal nötig.</string>
+  <string name="set_console">PS5-Kachel</string>
+  <string name="set_console_help">Eine große Kachel, die den Fernseher auf die PS5 umschaltet, auf den hier gewählten HDMI-Eingang. Funktioniert mit einem LG-Fernseher im selben Netzwerk: Beim ersten Mal fragt der Fernseher, ob Homestead erlaubt werden soll.</string>
+  <string name="set_disney">Disney+-Taste</string>
+  <string name="set_disney_console">Schaltet auf PS5</string>
+  <string name="set_disney_app">Öffnet Disney+</string>
+  <string name="set_disney_help">Die Disney+-Taste der Fernbedienung kann den Fernseher stattdessen auf die PS5 umschalten, einige Sekunden nach dem Drücken (der Fire TV prüft zuerst, ob der Fernseher auf seinem eigenen Eingang ist). Die PS5-Kachel muss eingeschaltet sein.</string>
 </resources>

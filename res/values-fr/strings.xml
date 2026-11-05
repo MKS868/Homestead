@@ -747,4 +747,14 @@
   <string name="set_apps_one">Applis sur une seule rangée</string>
   <string name="set_apps_one_help">Les applis TV et les autres ensemble dans une seule grille, triées comme une seule liste. Les autres applis reçoivent des tuiles larges faites de leur icône.</string>
   <string name="ro_in_apps">dans Applications</string>
+  <string name="console_name">PS5</string>
+  <string name="tv_switching">Passage du téléviseur sur %1$s…</string>
+  <string name="tv_switch_failed">Impossible de passer le téléviseur sur %1$s. Il faut un téléviseur LG sur le même réseau que ce Fire TV.</string>
+  <string name="tv_allow_prompt">Votre téléviseur demande s\'il faut autoriser Homestead. Choisissez Autoriser avec la télécommande LG ; une seule fois suffit.</string>
+  <string name="set_console">Tuile PS5</string>
+  <string name="set_console_help">Une grande tuile qui passe le téléviseur sur la PS5, sur l\'entrée HDMI choisie ici. Fonctionne avec un téléviseur LG sur le même réseau : la première fois, le téléviseur demande s\'il faut autoriser Homestead.</string>
+  <string name="set_disney">Bouton Disney+</string>
+  <string name="set_disney_console">Passe sur la PS5</string>
+  <string name="set_disney_app">Ouvre Disney+</string>
+  <string name="set_disney_help">Le bouton Disney+ de la télécommande peut passer le téléviseur sur la PS5, quelques secondes après l\'appui (le Fire TV vérifie d\'abord que le téléviseur est sur sa propre entrée). La tuile PS5 doit être activée.</string>
 </resources>

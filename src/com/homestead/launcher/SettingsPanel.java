@@ -37,6 +37,44 @@ public final class SettingsPanel {
 
     private SettingsPanel() { }
 
+    /** The PS5 tile's input choices, as the LG TV names them; "" is no tile. */
+    private static final String[] CONSOLE_INPUTS = { "HDMI_1", "HDMI_2", "HDMI_3", "HDMI_4", "" };
+
+    /** The PS5 tile and the Disney+ button that can switch to it. */
+    private static void addConsole(final Context c, final Host host, Panel p) {
+        p.addHeader(c.getString(R.string.console_name));
+        final Panel.Row input = p.addRow(c.getString(R.string.set_console), consoleLabel(c), null);
+        input.setValueColor(0xFF8FA3B8);
+        input.setHelp(c.getString(R.string.set_console_help));
+        final Panel.Row disney = p.addRow(c.getString(R.string.set_disney),
+                c.getString(Prefs.disneyToConsole(c) ? R.string.set_disney_console : R.string.set_disney_app),
+                null).asSwitch();
+        disney.setHelp(c.getString(R.string.set_disney_help));
+        input.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String now = Prefs.consoleInput(c);
+                int i = java.util.Arrays.asList(CONSOLE_INPUTS).indexOf(now);
+                Prefs.setConsoleInput(c, CONSOLE_INPUTS[(i + 1) % CONSOLE_INPUTS.length]);
+                input.setValue(consoleLabel(c));
+                AppModel.reload(c);
+                host.rebuildGrid();
+            }
+        });
+        disney.cell.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                boolean n = !Prefs.disneyToConsole(c);
+                Prefs.setDisneyToConsole(c, n);
+                disney.setValue(c.getString(n ? R.string.set_disney_console : R.string.set_disney_app));
+            }
+        });
+    }
+
+    /** "HDMI 4", or Off. */
+    private static String consoleLabel(Context c) {
+        String in = Prefs.consoleInput(c);
+        return in.length() == 0 ? onOff(false) : in.replace('_', ' ');
+    }
+
     /** Set just before the hub is redrawn for a new language, to land back on that row. */
     private static boolean focusLanguage;
 
@@ -102,6 +140,8 @@ public final class SettingsPanel {
             }
         });
         p.addNote(c.getString(R.string.set_simple_note));
+
+        addConsole(c, host, p);
 
         p.addHeader(c.getString(R.string.set_system));
 

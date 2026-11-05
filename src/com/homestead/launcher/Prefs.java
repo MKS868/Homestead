@@ -130,6 +130,40 @@ public final class Prefs {
         sp(c).edit().putStringSet(K_BIG, s).apply();
     }
 
+    /**
+     * The TV input the PS5 is on, as the LG TV names it ("HDMI_4"), or "" for no PS5 tile.
+     * Defaults to HDMI 4, where this TV found it over HDMI-CEC.
+     */
+    private static final String K_CONSOLE_INPUT = "console_input";
+    public static final String CONSOLE_DEFAULT = "HDMI_4";
+    /** The remote's Disney+ button switches to the PS5 instead (while there is a PS5 tile). */
+    private static final String K_DISNEY_TO_CONSOLE = "disney_to_console";
+    /** The LG TV found on the network, and the key it gave when it allowed us (never logged). */
+    private static final String K_LG_HOST = "lg_host";
+    private static final String K_LG_KEY = "lg_client_key";
+
+    public static String consoleInput(Context c) {
+        return sp(c).getString(K_CONSOLE_INPUT, CONSOLE_DEFAULT);
+    }
+    public static void setConsoleInput(Context c, String v) {
+        sp(c).edit().putString(K_CONSOLE_INPUT, v == null ? "" : v).apply();
+    }
+    public static boolean hasConsole(Context c) {
+        return consoleInput(c).length() > 0;
+    }
+
+    public static boolean disneyToConsole(Context c) {
+        return sp(c).getBoolean(K_DISNEY_TO_CONSOLE, true);
+    }
+    public static void setDisneyToConsole(Context c, boolean v) {
+        sp(c).edit().putBoolean(K_DISNEY_TO_CONSOLE, v).apply();
+    }
+
+    public static String lgHost(Context c) { return sp(c).getString(K_LG_HOST, null); }
+    public static void setLgHost(Context c, String v) { sp(c).edit().putString(K_LG_HOST, v).apply(); }
+    public static String lgKey(Context c) { return sp(c).getString(K_LG_KEY, null); }
+    public static void setLgKey(Context c, String v) { sp(c).edit().putString(K_LG_KEY, v).apply(); }
+
     public static int hiddenCount(Context c) {
         return sp(c).getStringSet(K_HIDDEN, Collections.<String>emptySet()).size();
     }
