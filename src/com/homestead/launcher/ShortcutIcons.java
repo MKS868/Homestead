@@ -118,11 +118,49 @@ final class ShortcutIcons {
         } else if ("account".equals(id)) {
             c.drawCircle(s * 0.5f, s * 0.34f, s * 0.14f, line);
             c.drawArc(new RectF(s * 0.2f, s * 0.58f, s * 0.8f, s * 1.1f), 200f, 140f, false, line);
+        } else if ("gamepad".equals(id)) {
+            c.drawRoundRect(new RectF(s * 0.08f, s * 0.3f, s * 0.92f, s * 0.74f), s * 0.2f, s * 0.2f, line);
+            c.drawLine(s * 0.22f, s * 0.52f, s * 0.42f, s * 0.52f, line);
+            c.drawLine(s * 0.32f, s * 0.42f, s * 0.32f, s * 0.62f, line);
+            c.drawCircle(s * 0.64f, s * 0.47f, s * 0.04f, fill);
+            c.drawCircle(s * 0.74f, s * 0.58f, s * 0.04f, fill);
+        } else if ("sparkle".equals(id)) {
+            // A large four-point star and a small one, as for ambient or highlights.
+            c.drawPath(star(s * 0.44f, s * 0.56f, s * 0.32f), fill);
+            c.drawPath(star(s * 0.76f, s * 0.24f, s * 0.13f), fill);
+        } else if ("smarthome".equals(id)) {
+            android.graphics.Path roof = new android.graphics.Path();
+            roof.moveTo(s * 0.12f, s * 0.48f);
+            roof.lineTo(s * 0.5f, s * 0.16f);
+            roof.lineTo(s * 0.88f, s * 0.48f);
+            c.drawPath(roof, line);
+            android.graphics.Path walls = new android.graphics.Path();
+            walls.moveTo(s * 0.22f, s * 0.42f);
+            walls.lineTo(s * 0.22f, s * 0.86f);
+            walls.lineTo(s * 0.78f, s * 0.86f);
+            walls.lineTo(s * 0.78f, s * 0.42f);
+            c.drawPath(walls, line);
+            // A connected light: a dot with two arcs over it.
+            c.drawCircle(s * 0.5f, s * 0.7f, s * 0.045f, fill);
+            c.drawArc(new RectF(s * 0.39f, s * 0.53f, s * 0.61f, s * 0.75f), 225f, 90f, false, line);
+            c.drawArc(new RectF(s * 0.3f, s * 0.44f, s * 0.7f, s * 0.84f), 225f, 90f, false, line);
         } else {
             c.drawCircle(s * 0.5f, s * 0.5f, s * 0.36f, line);
             c.drawLine(s * 0.5f, s * 0.46f, s * 0.5f, s * 0.68f, line);
             c.drawCircle(s * 0.5f, s * 0.33f, s * 0.025f, fill);
         }
         return b;
+    }
+
+    /** A four-point star of radius r with curved sides. */
+    private static android.graphics.Path star(float cx, float cy, float r) {
+        android.graphics.Path p = new android.graphics.Path();
+        p.moveTo(cx, cy - r);
+        p.quadTo(cx, cy, cx + r, cy);
+        p.quadTo(cx, cy, cx, cy + r);
+        p.quadTo(cx, cy, cx - r, cy);
+        p.quadTo(cx, cy, cx, cy - r);
+        p.close();
+        return p;
     }
 }

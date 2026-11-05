@@ -114,6 +114,7 @@ public class HomeGrid implements SettingsPanel.Host {
     /** Inputs shown as pills in the bar, ahead of More settings and Settings. */
     private static final int GLASS_BAR_INPUTS = 2;
     private static final int GLASS_DISC_COLOR = 0xF2FFFFFF;
+    private static final int GLASS_DARK_DISC_COLOR = 0xE6222A33;
     private static final int GLASS_GLYPH_COLOR = 0xFF1B2733;
 
     private final Context ctx;
@@ -680,6 +681,21 @@ public class HomeGrid implements SettingsPanel.Host {
                 startMoving(key, it.label);
             }
         }).setHelp(ctx.getString(R.string.tm_move_help));
+        // An app without a banner can join the TV apps on one made from its icon, and leave.
+        if (it.type == AppModel.TYPE_APP) {
+            final boolean big = Prefs.isBig(ctx, key);
+            boolean small = it.banner == null || !(it.tvApp || Prefs.appsOneRow(ctx));
+            if (big || small) {
+                p.addRow(ctx.getString(big ? R.string.tm_small : R.string.tm_big), "", new Runnable() {
+                    public void run() {
+                        Prefs.setBig(ctx, key, !big);
+                        closePanel();
+                        AppModel.reload(ctx);
+                        reorder(key);
+                    }
+                }).setHelp(ctx.getString(big ? R.string.tm_small_help : R.string.tm_big_help));
+            }
+        }
         if (hideable(it)) {
             p.addRow(ctx.getString(R.string.tm_hide), "", new Runnable() {
                 public void run() {
@@ -1457,12 +1473,13 @@ public class HomeGrid implements SettingsPanel.Host {
     private View buildRoundIcon(AppModel.Item it) {
         FrameLayout cell = newCell(it);
         roundCells.add(cell);
+        // The outline only shapes the lifted shadow; the art paints its own smooth circle
+        // (RoundArt), since a view clipped to an oval has stepped edges here.
         cell.setOutlineProvider(new android.view.ViewOutlineProvider() {
             public void getOutline(View v, android.graphics.Outline o) {
                 o.setOval(0, 0, v.getWidth(), v.getHeight());
             }
         });
-        cell.setClipToOutline(true);
         GradientDrawable disc = new GradientDrawable();
         disc.setShape(GradientDrawable.OVAL);
         disc.setColor(GLASS_DISC_COLOR);
@@ -1470,15 +1487,18 @@ public class HomeGrid implements SettingsPanel.Host {
 
         int d = dp(GLASS_ICON_DP);
         ImageView ic = new ImageView(ctx);
+        ic.setScaleType(ImageView.ScaleType.FIT_XY);
         int size = d;
-        if (it.icon != null) {
+        if (it.icon != null && fillsEdge(it.icon)) {
+            ic.setImageDrawable(new RoundArt(it.icon, RoundArt.OVAL, false));
+        } else if (it.icon != null) {
             ic.setImageBitmap(it.icon);
-            boolean fills = fillsEdge(it.icon);
-            ic.setScaleType(fills ? ImageView.ScaleType.CENTER_CROP : ImageView.ScaleType.FIT_CENTER);
-            if (!fills) size = d * 64 / 100;
+            ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            size = d * 64 / 100;
+            // Light line art (made for a dark screen, like Early Access's) vanishes on white.
+            if (isLightArt(it.icon)) disc.setColor(GLASS_DARK_DISC_COLOR);
         } else if (it.banner != null) {
-            ic.setImageBitmap(it.banner);
-            ic.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            ic.setImageDrawable(new RoundArt(it.banner, RoundArt.OVAL, false));
         } else if (it.glyph != 0) {
             ic.setImageResource(it.glyph);
             ic.setColorFilter(GLASS_GLYPH_COLOR, android.graphics.PorterDuff.Mode.SRC_IN);
@@ -1509,10 +1529,43 @@ public class HomeGrid implements SettingsPanel.Host {
         return unit;
     }
 
-    /** Whether the art is opaque a little in from its left edge, at mid height. */
+    /**
+     * Whether the art's visible pixels are mostly light. Every pixel is read (an icon is
+     * small): a sample grid can miss a thin outline altogether.
+     */
+    private static boolean isLightArt(Bitmap b) {
+        try {
+            int w = b.getWidth(), h = b.getHeight();
+            int[] px = new int[w * h];
+            b.getPixels(px, 0, w, 0, 0, w, h);
+            long lum = 0;
+            int n = 0;
+            for (int p : px) {
+                if ((p >>> 24) < 0x80) continue;
+                lum += (299 * ((p >> 16) & 0xFF) + 587 * ((p >> 8) & 0xFF) + 114 * (p & 0xFF)) / 1000;
+                n++;
+            }
+            return n > 0 && lum / n > 0xC0;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether the art is opaque all round, just inside the circle the disc cuts from it:
+     * eight points, so a thin outline that one of them happens to cross does not count.
+     */
     private static boolean fillsEdge(Bitmap b) {
         try {
-            return (b.getPixel(b.getWidth() * 15 / 100, b.getHeight() / 2) >>> 24) >= 0xE0;
+            float cx = b.getWidth() / 2f, cy = b.getHeight() / 2f;
+            float r = Math.min(cx, cy) * 0.8f;
+            for (int i = 0; i < 8; i++) {
+                double a = Math.toRadians(i * 45);
+                int x = Math.round(cx + (float) Math.cos(a) * r);
+                int y = Math.round(cy + (float) Math.sin(a) * r);
+                if ((b.getPixel(x, y) >>> 24) < 0xE0) return false;
+            }
+            return true;
         } catch (Throwable t) {
             return false;
         }
@@ -2393,20 +2446,11 @@ public class HomeGrid implements SettingsPanel.Host {
     /** @param inDock on the dock's band, where the title line names the focused tile. */
     private View buildTile(AppModel.Item it, boolean inDock) {
         FrameLayout cell = newCell(it);
-        // The banner is kept square-cornered at twice its drawn size (AppModel), so the
-        // corners are cut here, at the radius the tile is drawn with. The name label hangs
-        // below the cell, so a grid tile clips only its image, not the cell.
-        final int r = radius();
-        android.view.ViewOutlineProvider rounded = new android.view.ViewOutlineProvider() {
-            public void getOutline(View v, android.graphics.Outline o) {
-                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), r);
-            }
-        };
+        // The banner is kept square-cornered at twice its drawn size (AppModel), so its
+        // corners are rounded here, at the design's radius, with smooth edges (RoundArt).
         ImageView img = new ImageView(ctx);
-        img.setOutlineProvider(rounded);
-        img.setClipToOutline(true);
         img.setScaleType(ImageView.ScaleType.FIT_XY);
-        img.setImageBitmap(it.banner);
+        img.setImageDrawable(new RoundArt(it.banner, radius(), true));
         cell.addView(img, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         if (inDock) return cell;

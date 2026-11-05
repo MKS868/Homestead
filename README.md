@@ -25,7 +25,11 @@ Both pictures are from the same TV, a few minutes apart.
   **Dock size** sets how big the banner tiles are in both.
 - **Sharp artwork.** Banners and icons are read at the highest density each app ships and
   kept at twice their drawn size, so they stay crisp after Fire OS scales the 1080p home
-  screen up to 4K.
+  screen up to 4K. Amazon system apps that ship no icon, Android's template robot, or a
+  48 px one (Amazon Settings, Ambient Experience, Game Center, Alexa Smart Home, the
+  profile screen) get a drawn replacement instead.
+- **Big or small, your choice.** Any app without a banner can join the TV apps: press MENU
+  on it and choose **Show as big tile** (and **Show as small icon** to put it back).
 - **The Home button comes here.** Pressing Home opens Homestead in about 170 ms instead of
   Amazon's home screen.
 - **HDMI and Composite inputs as tiles**, so switching source is one press from home.

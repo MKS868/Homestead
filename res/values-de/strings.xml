@@ -735,6 +735,10 @@
   <string name="tm_unpin_help">Zurück an ihren Platz in der Sortierung.</string>
   <string name="tm_move">Verschieben</string>
   <string name="tm_move_help">Links und Rechts verschieben sie um einen Platz, Oben und Unten um eine Zeile. OK oder Zurück legt sie ab. Eine nicht angeheftete Kachel wird zuerst angeheftet, ebenso die Kacheln, an denen sie vorbeizieht, damit alles davor seinen Platz behält.</string>
+  <string name="tm_big">Als große Kachel zeigen</string>
+  <string name="tm_big_help">Zeigt diese App bei den TV-Apps, auf einem Banner aus ihrem Symbol.</string>
+  <string name="tm_small">Als kleines Symbol zeigen</string>
+  <string name="tm_small_help">Zeigt diese App wieder bei den anderen Apps.</string>
   <string name="tm_hide">Ausblenden</string>
   <string name="tm_hide_help">Nur dieser Launcher zeichnet sie nicht mehr; nichts wird deaktiviert oder deinstalliert. Ausgeblendete Kacheln stehen unter Einstellungen → Startbildschirm.</string>
   <string name="tm_moving">%1$s wird verschoben: Links und Rechts verschieben, OK oder Zurück legt ab.</string>

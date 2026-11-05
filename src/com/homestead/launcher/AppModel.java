@@ -313,16 +313,26 @@ public final class AppModel {
                 if (a.banner != null) a.accent = dominantColor(a.banner);
                 // Icons are only shown when there is no banner, so only decode them then.
                 if (a.banner == null) {
-                    Drawable ic = sharpest(pm, ai.applicationInfo, ri.getIconResource());
+                    // A drawn replacement where the app's own icon is missing or unusable.
+                    Bitmap art = AppArt.icon(ai.packageName, ICON_PX);
+                    if (art == null && ri.getIconResource() == 0) art = AppArt.generic(ICON_PX);
+                    Drawable ic = art != null
+                            ? new android.graphics.drawable.BitmapDrawable(c.getResources(), art)
+                            : sharpest(pm, ai.applicationInfo, ri.getIconResource());
                     if (ic == null) {
                         try { ic = ri.loadIcon(pm); } catch (Throwable t) { ic = null; }
                     }
-                    if (wide) {
+                    // "Show as big tile" from the tile's menu: a banner made from the icon,
+                    // among the TV apps.
+                    boolean big = Prefs.isBig(c, a.key());
+                    if (wide || big) {
                         a.banner = iconTile(c, ic, BANNER_SCALE * cellW, BANNER_SCALE * cellH);
-                        if (a.banner != null) a.accent = dominantColor(a.banner);
-                    } else {
-                        a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
+                        if (a.banner != null) {
+                            a.accent = dominantColor(a.banner);
+                            if (big) a.tvApp = true;
+                        }
                     }
+                    if (a.banner == null) a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
                     ic = null;
                 }
                 ITEMS.add(a);

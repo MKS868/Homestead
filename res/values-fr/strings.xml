@@ -731,6 +731,10 @@
   <string name="tm_unpin_help">Elle reprend sa place dans l\'ordre de tri.</string>
   <string name="tm_move">Déplacer</string>
   <string name="tm_move_help">Gauche et Droite la déplacent d\'une place, Haut et Bas d\'une ligne. OK ou Retour la repose. Une tuile non épinglée est d\'abord épinglée, ainsi que les tuiles qu\'elle dépasse, pour que tout ce qui la précède garde sa place.</string>
+  <string name="tm_big">Afficher en grande tuile</string>
+  <string name="tm_big_help">Place cette appli parmi les applis TV, sur une bannière faite à partir de son icône.</string>
+  <string name="tm_small">Afficher en petite icône</string>
+  <string name="tm_small_help">Remet cette appli avec les autres applis.</string>
   <string name="tm_hide">Masquer</string>
   <string name="tm_hide_help">Seul ce lanceur cesse de l\'afficher ; rien n\'est désactivé ni désinstallé. Les tuiles masquées sont listées dans Réglages → Écran d\'accueil.</string>
   <string name="tm_moving">Déplacement de %1$s : Gauche et Droite la déplacent, OK ou Retour la repose.</string>

@@ -112,6 +112,24 @@ public final class Prefs {
         sp(c).edit().putStringSet(K_HIDDEN, new HashSet<String>()).apply();
     }
 
+    /**
+     * Apps without a banner shown among the TV apps anyway, on a banner made from their icon
+     * ("Show as big tile" in a tile's menu). Keys as AppModel.Item.key().
+     */
+    private static final String K_BIG = "big_tiles";
+
+    public static boolean isBig(Context c, String key) {
+        if (key == null) return false;
+        return sp(c).getStringSet(K_BIG, Collections.<String>emptySet()).contains(key);
+    }
+
+    public static void setBig(Context c, String key, boolean big) {
+        if (key == null) return;
+        Set<String> s = new HashSet<String>(sp(c).getStringSet(K_BIG, Collections.<String>emptySet()));
+        if (big) s.add(key); else s.remove(key);
+        sp(c).edit().putStringSet(K_BIG, s).apply();
+    }
+
     public static int hiddenCount(Context c) {
         return sp(c).getStringSet(K_HIDDEN, Collections.<String>emptySet()).size();
     }
