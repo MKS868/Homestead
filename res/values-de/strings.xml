@@ -61,9 +61,10 @@
   <string name="opt_fire">Fire-TV-Systemsymbole</string>
   <string name="opt_fire_help">Amazon Home, Einstellungen und TV-Zustand nutzen die Symbole von Fire OS und seinen Einstellungen, ausgelesen von diesem TV. Fehlt eines, bleibt das übliche Symbol.</string>
   <string name="opt_design">Design</string>
-  <string name="opt_design_help">Klassisch: die Bereiche, jeder unter seiner Überschrift. Dock: die ersten Ihrer TV-Apps in ihrer Sortierreihenfolge auf einem Band unten auf dem ersten Bildschirm, mit einem Leuchten in der Farbe der gewählten App, alles andere in einem Raster darunter, und Uhr und Einstellungen in einer Leiste oben.</string>
+  <string name="opt_design_help">Klassisch: die Bereiche, jeder unter seiner Überschrift. Dock: die ersten Ihrer TV-Apps in ihrer Sortierreihenfolge auf einem Band unten auf dem ersten Bildschirm, mit einem Leuchten in der Farbe der gewählten App, alles andere in einem Raster darunter, und Uhr und Einstellungen in einer Leiste oben. Glas: eine Landschaft hinter einer Milchglas-Fläche unten, darauf Ihre ersten TV-Apps und darunter alle anderen Apps als runde Symbole; eine große Uhr und das Datum oben links, die Eingänge und Einstellungen oben rechts.</string>
   <string name="opt_design_classic">Klassisch</string>
   <string name="opt_design_dock">Dock</string>
+  <string name="opt_design_glass">Glas</string>
   <string name="opt_dock_size">Dockgröße</string>
   <string name="opt_dock_size_help">Wie groß die Kacheln im Dock sind. Bei den größeren Größen passen weniger hinein.</string>
   <string name="opt_dock_s">Klein</string>

@@ -61,9 +61,10 @@
   <string name="opt_fire">Fire TV system icons</string>
   <string name="opt_fire_help">Amazon Home, Settings and TV Health use the icons of Fire OS\'s own home and Settings, read from this TV. Where one is missing, the usual icon stays.</string>
   <string name="opt_design">Design</string>
-  <string name="opt_design_help">Classic: the sections, each under its heading. Dock: the first of your TV apps, in their sort order, on a band at the bottom of the first screen, with a glow in the selected app\'s colour, everything else in one grid below, and the clock and Settings in a bar at the top.</string>
+  <string name="opt_design_help">Classic: the sections, each under its heading. Dock: the first of your TV apps, in their sort order, on a band at the bottom of the first screen, with a glow in the selected app\'s colour, everything else in one grid below, and the clock and Settings in a bar at the top. Glass: a landscape behind a frosted panel at the bottom, with your first TV apps on top and every other app below them as round icons; a large clock and the date at the top left, the inputs and Settings at the top right.</string>
   <string name="opt_design_classic">Classic</string>
   <string name="opt_design_dock">Dock</string>
+  <string name="opt_design_glass">Glass</string>
   <string name="opt_dock_size">Dock size</string>
   <string name="opt_dock_size_help">How big the tiles in the dock are. Fewer fit at the larger sizes.</string>
   <string name="opt_dock_s">Small</string>

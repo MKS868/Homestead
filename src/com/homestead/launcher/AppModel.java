@@ -106,7 +106,14 @@ public final class AppModel {
     public static void invalidateMetrics() { cellW = 0; cellH = 0; }
     private static final int MARGIN_DP = 32;
     private static final int GAP_DP = 16;
-    private static final int ICON_PX = 96;
+    /**
+     * Icons and banners are kept at twice the size they are drawn at: Fire OS draws the home
+     * screen at 1080p and the TV scales it up to 4K, so art kept at its drawn size was
+     * stretched twice and came out soft, and the dock and glass designs draw banners larger
+     * than a grid cell.
+     */
+    private static final int ICON_PX = 192;
+    private static final int BANNER_SCALE = 2;
     private static final int CORNER_DP = 8;
 
     public static class Item {
@@ -294,27 +301,24 @@ public final class AppModel {
                 CharSequence lb = ri.loadLabel(pm);
                 a.label = (lb == null) ? ai.packageName : lb.toString();
 
-                Drawable raw = null;
-                try { raw = ai.loadBanner(pm); } catch (Throwable t) { raw = null; }
-                a.banner = toBitmap(c, raw, cellW, cellH, true);
+                // The sharpest density the app ships, so the art is scaled down rather than up.
+                // Unrounded: the tile clips it to the corner radius of the design in use.
+                Drawable raw = sharpest(pm, ai.applicationInfo, ai.getBannerResource());
+                if (raw == null) {
+                    try { raw = ai.loadBanner(pm); } catch (Throwable t) { raw = null; }
+                }
+                a.banner = toBitmap(c, raw, BANNER_SCALE * cellW, BANNER_SCALE * cellH, false);
                 raw = null;
                 a.tvApp = (ci == 0) || a.banner != null;
                 if (a.banner != null) a.accent = dominantColor(a.banner);
                 // Icons are only shown when there is no banner, so only decode them then.
                 if (a.banner == null) {
-                    Drawable ic = null;
-                    // A wide tile draws the icon at tile height: take the sharpest density the app ships.
-                    if (wide) {
-                        try {
-                            ic = pm.getResourcesForApplication(ri.activityInfo.applicationInfo)
-                                    .getDrawableForDensity(ri.getIconResource(), DisplayMetrics.DENSITY_XXXHIGH);
-                        } catch (Throwable t) { ic = null; }
-                    }
+                    Drawable ic = sharpest(pm, ai.applicationInfo, ri.getIconResource());
                     if (ic == null) {
                         try { ic = ri.loadIcon(pm); } catch (Throwable t) { ic = null; }
                     }
                     if (wide) {
-                        a.banner = iconTile(c, ic, cellW, cellH);
+                        a.banner = iconTile(c, ic, BANNER_SCALE * cellW, BANNER_SCALE * cellH);
                         if (a.banner != null) a.accent = dominantColor(a.banner);
                     } else {
                         a.icon = toBitmap(c, ic, ICON_PX, ICON_PX, false);
@@ -713,6 +717,17 @@ public final class AppModel {
         }
     }
 
+    /** A resource of the app at the highest density it ships, or null (none, or unreadable). */
+    private static Drawable sharpest(PackageManager pm, android.content.pm.ApplicationInfo app, int res) {
+        if (res == 0 || app == null) return null;
+        try {
+            return pm.getResourcesForApplication(app)
+                    .getDrawableForDensity(res, DisplayMetrics.DENSITY_XXXHIGH);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** The icon whole, as large as fits, centred. */
     private static void drawFitted(Canvas cv, Bitmap icon, int w, int h, Paint p) {
         float k = Math.min((float) h / icon.getHeight(), (float) w / icon.getWidth());
@@ -752,8 +767,10 @@ public final class AppModel {
             int w = src.getIntrinsicWidth();
             int h = src.getIntrinsicHeight();
             if (w <= 0 || h <= 0) { w = maxW; h = maxH; }
+            // Not capped at 1: a drawable's intrinsic size is in this screen's density, so art
+            // loaded at a higher density holds more pixels than it reports, and capping kept
+            // only a screen-density copy of it.
             float s = Math.min((float) maxW / (float) w, (float) maxH / (float) h);
-            if (s > 1f) s = 1f;
             int tw = Math.max(1, Math.round(w * s));
             int th = Math.max(1, Math.round(h * s));
             Bitmap bmp = Bitmap.createBitmap(tw, th, Bitmap.Config.ARGB_8888);

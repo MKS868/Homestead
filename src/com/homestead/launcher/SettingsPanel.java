@@ -189,9 +189,9 @@ public final class SettingsPanel {
 
     // ---------------------------------------------------------------- home screen
 
-    /** The dock layout is what the home screen draws: Dock chosen, and not Simple mode. */
+    /** The dock layout (Dock or Glass) is what the home screen draws, and not Simple mode. */
     private static boolean dockLayout(Context c) {
-        return Prefs.design(c) == Prefs.DESIGN_DOCK && !Prefs.simpleMode(c);
+        return Prefs.design(c) != Prefs.DESIGN_CLASSIC && !Prefs.simpleMode(c);
     }
 
     private static View buildHome(final Context c, final Host host, final Runnable changed) {
@@ -199,20 +199,21 @@ public final class SettingsPanel {
 
         // The design first: it decides what the rest of the page means. Dock size shows
         // only with Dock, and Row order (further down) only with Classic, which has rows.
-        final int[] designs = { R.string.opt_design_classic, R.string.opt_design_dock };
+        final int[] designs = { R.string.opt_design_classic, R.string.opt_design_dock,
+                R.string.opt_design_glass };
         final int[] sizes = { R.string.opt_dock_s, R.string.opt_dock_m, R.string.opt_dock_l, R.string.opt_dock_xl };
         final Panel.Row[] orderRow = new Panel.Row[1];
         final Panel.Row design = p.addRow(c.getString(R.string.opt_design),
-                c.getString(designs[Prefs.design(c)]), null);
+                c.getString(designs[Prefs.design(c) % designs.length]), null);
         final Panel.Row dockSize = p.addRow(c.getString(R.string.opt_dock_size),
                 c.getString(sizes[Prefs.dockSize(c)]), null);
-        dockSize.cell.setVisibility(Prefs.design(c) == Prefs.DESIGN_DOCK ? View.VISIBLE : View.GONE);
+        dockSize.cell.setVisibility(Prefs.design(c) != Prefs.DESIGN_CLASSIC ? View.VISIBLE : View.GONE);
         design.cell.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 int n = (Prefs.design(c) + 1) % designs.length;
                 Prefs.setDesign(c, n);
                 design.setValue(c.getString(designs[n]));
-                dockSize.cell.setVisibility(n == Prefs.DESIGN_DOCK ? View.VISIBLE : View.GONE);
+                dockSize.cell.setVisibility(n != Prefs.DESIGN_CLASSIC ? View.VISIBLE : View.GONE);
                 if (orderRow[0] != null) orderRow[0].cell.setVisibility(dockLayout(c) ? View.GONE : View.VISIBLE);
                 host.rebuildGrid();
                 changed.run();

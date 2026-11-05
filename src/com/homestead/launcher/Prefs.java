@@ -302,9 +302,13 @@ public final class Prefs {
     public static String language(Context c) { return sp(c).getString(K_LANGUAGE, ""); }
     public static void setLanguage(Context c, String v) { sp(c).edit().putString(K_LANGUAGE, v).apply(); }
 
-    /** The home screen's layout: the sections, or the dock design from PR #27. */
+    /**
+     * The home screen's layout: the sections, the dock design from PR #27, or Glass (the
+     * dock's band grown into a frosted panel that also holds the other apps as round icons).
+     */
     public static final int DESIGN_CLASSIC = 0;
     public static final int DESIGN_DOCK = 1;
+    public static final int DESIGN_GLASS = 2;
     public static int design(Context c) { return sp(c).getInt("home_design", DESIGN_CLASSIC); }
     public static void setDesign(Context c, int v) { sp(c).edit().putInt("home_design", v).apply(); }
 

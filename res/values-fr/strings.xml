@@ -58,9 +58,10 @@
   <string name="opt_fire">Icônes système Fire TV</string>
   <string name="opt_fire_help">Accueil Amazon, Réglages et Santé de la TV utilisent les icônes de l\'accueil et des Paramètres de Fire OS, lues sur cette TV. Si l\'une manque, l\'icône habituelle reste.</string>
   <string name="opt_design">Design</string>
-  <string name="opt_design_help">Classique : les sections, chacune sous son titre. Dock : les premières de vos applis TV, dans leur ordre de tri, sur un bandeau en bas du premier écran, avec un halo de la couleur de l\'appli sélectionnée, tout le reste dans une seule grille en dessous, et l\'horloge et les Réglages dans une barre en haut.</string>
+  <string name="opt_design_help">Classique : les sections, chacune sous son titre. Dock : les premières de vos applis TV, dans leur ordre de tri, sur un bandeau en bas du premier écran, avec un halo de la couleur de l\'appli sélectionnée, tout le reste dans une seule grille en dessous, et l\'horloge et les Réglages dans une barre en haut. Verre : un paysage derrière un panneau dépoli en bas, avec vos premières applis TV au-dessus et toutes les autres applis en dessous en icônes rondes ; une grande horloge et la date en haut à gauche, les entrées et les Réglages en haut à droite.</string>
   <string name="opt_design_classic">Classique</string>
   <string name="opt_design_dock">Dock</string>
+  <string name="opt_design_glass">Verre</string>
   <string name="opt_dock_size">Taille du dock</string>
   <string name="opt_dock_size_help">La taille des tuiles du dock. Il en tient moins aux grandes tailles.</string>
   <string name="opt_dock_s">Petite</string>

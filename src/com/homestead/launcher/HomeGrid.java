@@ -99,6 +99,23 @@ public class HomeGrid implements SettingsPanel.Host {
     private static final android.view.animation.Interpolator DOCK_OUT =
             new android.view.animation.DecelerateInterpolator(1.4f);
 
+    // The glass design: the dock's band grown into a frosted panel that also holds the other
+    // apps as round icons, over a scrim that keeps the clock and the panel readable on a photo.
+    /** Corner radius of a tile and of its focus rim; the classic and dock designs use 8. */
+    private static final int GLASS_RADIUS_DP = 12;
+    private static final int GLASS_PANEL_RADIUS_DP = 26;
+    private static final int GLASS_PAD_EXTRA_DP = 10;
+    private static final int GLASS_ICON_DP = 48;
+    private static final int GLASS_ICON_W_DP = 72;
+    private static final int GLASS_ICON_GAP_DP = 18;
+    private static final int GLASS_LABEL_DP = 18;
+    /** Room for the large clock and the date above the scrolling page. */
+    private static final int GLASS_BAR_H_DP = 116;
+    /** Inputs shown as pills in the bar, ahead of More settings and Settings. */
+    private static final int GLASS_BAR_INPUTS = 2;
+    private static final int GLASS_DISC_COLOR = 0xF2FFFFFF;
+    private static final int GLASS_GLYPH_COLOR = 0xFF1B2733;
+
     private final Context ctx;
     private final Listener listener;
 
@@ -116,8 +133,18 @@ public class HomeGrid implements SettingsPanel.Host {
     private boolean barShown;
     private View barSpacer, barRule;
 
-    /** The dock design is in use for this build (Settings, Home screen, Design). */
+    /** The dock design is in use for this build (Settings, Home screen, Design); Glass too. */
     private boolean dock;
+    /** The glass design is in use: dock is set as well, and this changes its look. */
+    private boolean glass;
+    /** The large clock with the date under it, at the top left of the glass design's bar. */
+    private final LinearLayout clockBox;
+    /** Darkens the top and bottom of a photo behind the glass design; hidden otherwise. */
+    private final View scrim;
+    /** The glass panel's round icon cells, which take an oval focus rim. */
+    private final java.util.Set<View> roundCells = new java.util.HashSet<View>();
+    /** Inputs shown as pills in the glass bar, so the panel leaves them out. */
+    private final java.util.Set<String> barInputKeys = new java.util.HashSet<String>();
     /** Behind everything; coloured by the focused banner in the dock design, else empty. */
     private final View glow;
     private int glowColor;
@@ -269,6 +296,13 @@ public class HomeGrid implements SettingsPanel.Host {
         glp.topMargin = Math.round(sh * 0.42f) - gs / 2;
         root.addView(glow, glp);
 
+        scrim = new View(c);
+        scrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] { 0x66060A10, 0x14060A10, 0x33060A10, 0xC2060A10 }));
+        scrim.setVisibility(View.GONE);
+        root.addView(scrim, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
         scroll = new ScrollView(c) {
             // Only the top edge fades under the top bar; the bottom row is not dimmed.
             @Override protected float getBottomFadingEdgeStrength() { return 0f; }
@@ -317,6 +351,8 @@ public class HomeGrid implements SettingsPanel.Host {
         dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         dateText.setLetterSpacing(0.1f);
         dateText.setSingleLine(true);
+        clockBox = new LinearLayout(c);
+        clockBox.setOrientation(LinearLayout.VERTICAL);
         topBar = new LinearLayout(c) {
             // The date is the first thing to go when the clock and the pills do not fit side by
             // side (a 12-hour clock is wider): better no date than a pill pushed off the screen.
@@ -466,7 +502,9 @@ public class HomeGrid implements SettingsPanel.Host {
             String fmt = (mode == Prefs.CLOCK_12H) ? "h:mm a" : "HH:mm";
             clock.setText(new SimpleDateFormat(fmt, Locale.getDefault()).format(now));
         }
-        dateText.setText(dateString(now, true).toUpperCase(Locale.getDefault()));
+        // Under the glass design's large clock there is room for the date in full.
+        dateText.setText(glass ? dateString(now, false)
+                : dateString(now, true).toUpperCase(Locale.getDefault()));
     }
 
     /**
@@ -1032,7 +1070,10 @@ public class HomeGrid implements SettingsPanel.Host {
         builtOrder = AppModel.order();
         builtGen = layoutGen;
         // Simple mode keeps its own plain layout whatever the design.
-        dock = Prefs.design(ctx) == Prefs.DESIGN_DOCK && !Prefs.simpleMode(ctx);
+        int design = Prefs.design(ctx);
+        dock = design != Prefs.DESIGN_CLASSIC && !Prefs.simpleMode(ctx);
+        glass = dock && design == Prefs.DESIGN_GLASS;
+        scrim.setVisibility(glass ? View.VISIBLE : View.GONE);
         dockKeys.clear();
         dockTitle = null;
         if (!dock) setGlow(0);
@@ -1049,6 +1090,8 @@ public class HomeGrid implements SettingsPanel.Host {
     /** Enough to get to Settings, using nothing that can throw. */
     private void buildFallback() {
         dock = false;
+        glass = false;
+        scrim.setVisibility(View.GONE);
         setGlow(0);
         column.removeAllViews();
         cellsByKey.clear();
@@ -1080,6 +1123,7 @@ public class HomeGrid implements SettingsPanel.Host {
         focusedCell = null;
         raisedRow = null;
         restoreSlot = null;
+        roundCells.clear();
 
         List<AppModel.Item> inputs = new ArrayList<AppModel.Item>();
         List<AppModel.Item> nonTv = new ArrayList<AppModel.Item>();
@@ -1106,6 +1150,9 @@ public class HomeGrid implements SettingsPanel.Host {
                 shortcuts.add(it);
             } else if (barShown && it.type == AppModel.TYPE_SETTINGS) {
                 // The top bar has its own Settings pill; the tile would only repeat it.
+                continue;
+            } else if (barInputKeys.contains(it.key())) {
+                // A pill in the glass design's bar already.
                 continue;
             } else if (tvFirst && it.type == AppModel.TYPE_LIVETV) {
                 liveTv = it;
@@ -1196,7 +1243,19 @@ public class HomeGrid implements SettingsPanel.Host {
                                List<AppModel.Item> nonTv) {
         if (restore != null) addRestoreTile(restore);
         int n = Math.min(dockCount(liveTv != null), tv.size());
-        if (liveTv != null || n > 0) addDock(liveTv, tv.subList(0, n), restore == null);
+        if (glass) {
+            // The glass panel holds the dock's banners and, under them, every other app,
+            // shortcut and input as a round icon; only the TV apps past the dock go below.
+            List<AppModel.Item> icons = new ArrayList<AppModel.Item>(nonTv);
+            icons.addAll(shortcuts);
+            icons.addAll(inputs);
+            if (liveTv != null || n > 0 || !icons.isEmpty()) {
+                addDock(liveTv, tv.subList(0, n), icons, restore == null);
+            }
+            if (n < tv.size()) addTileGrid(new ArrayList<AppModel.Item>(tv.subList(n, tv.size())));
+            return;
+        }
+        if (liveTv != null || n > 0) addDock(liveTv, tv.subList(0, n), null, restore == null);
         List<AppModel.Item> grid = new ArrayList<AppModel.Item>(inputs);
         grid.addAll(shortcuts);
         grid.addAll(tv.subList(n, tv.size()));
@@ -1213,22 +1272,39 @@ public class HomeGrid implements SettingsPanel.Host {
         int h = dp(DOCK_H_DP[Prefs.dockSize(ctx)]);
         int normalW = h * 16 / 9;
         int widest = featured ? normalW * 3 / 2 : normalW;
-        int padH = Math.max(dp(DOCK_PAD_DP), Math.round(widest * (DOCK_FOCUS_SCALE - 1f) / 2f) + dp(2));
+        int padH = dockPadH(widest);
         int avail = ctx.getResources().getDisplayMetrics().widthPixels - 2 * dp(MARGIN_DP) - 2 * padH;
         if (featured) avail -= widest + dp(GAP_DP);
         int n = (avail + dp(GAP_DP)) / (normalW + dp(GAP_DP));
         return Math.max(featured ? 0 : 1, n);
     }
 
-    /** The translucent band and its title line; pinned to the bottom when pin is set. */
-    private void addDock(AppModel.Item liveTv, List<AppModel.Item> apps, boolean pin) {
+    /**
+     * Room at the band's ends for the widest tile's growth on focus; the glass panel adds a
+     * little more, so a grown tile keeps clear of its rounded edge.
+     */
+    private int dockPadH(int widest) {
+        int grow = Math.round(widest * (DOCK_FOCUS_SCALE - 1f) / 2f) + dp(2);
+        return Math.max(dp(DOCK_PAD_DP), grow) + (glass ? dp(GLASS_PAD_EXTRA_DP) : 0);
+    }
+
+    /**
+     * The translucent band and its title line; pinned to the bottom when pin is set. With
+     * icons (the glass design) the band is a frosted panel with a row of round icons under
+     * the banners.
+     */
+    private void addDock(AppModel.Item liveTv, List<AppModel.Item> apps, List<AppModel.Item> icons,
+                         boolean pin) {
         TextView title = new TextView(ctx);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        title.setTextSize(TypedValue.COMPLEX_UNIT_SP, glass ? 22 : 24);
+        title.setTypeface(Typeface.create(glass ? "sans-serif" : "sans-serif-medium", Typeface.NORMAL));
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         paintText(title);
-        title.setText(liveTv != null ? liveTv.label : apps.get(0).label);
+        title.setText(liveTv != null ? liveTv.label
+                : !apps.isEmpty() ? apps.get(0).label : icons.get(0).label);
+        boolean hasBanners = liveTv != null || !apps.isEmpty();
+        boolean hasIcons = icons != null && !icons.isEmpty();
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         tlp.bottomMargin = dp(10);
@@ -1240,9 +1316,14 @@ public class HomeGrid implements SettingsPanel.Host {
         // otherwise be cut by the band's edge (the band clips, so tiles past its end are cut
         // off cleanly at the larger sizes).
         int widest = liveTv != null ? featuredW : normalW;
-        int padH = Math.max(dp(DOCK_PAD_DP), Math.round(widest * (DOCK_FOCUS_SCALE - 1f) / 2f) + dp(2));
+        int padH = dockPadH(widest);
         int padV = Math.round(h * (DOCK_FOCUS_SCALE - 1f) / 2f) + dp(DOCK_LIFT_DP) + dp(4);
-        int bandH = h + 2 * padV;
+        int bandH = hasBanners ? h + 2 * padV : 0;
+        // The icon row: a disc grown on focus, its name under it.
+        int iconPadV = Math.round(dp(GLASS_ICON_DP) * (DOCK_FOCUS_SCALE - 1f) / 2f)
+                + dp(DOCK_LIFT_DP) + dp(2);
+        if (hasIcons) bandH += dp(GLASS_ICON_DP) + dp(GLASS_LABEL_DP) + dp(6) + 2 * iconPadV;
+        if (hasBanners && hasIcons) bandH += dp(1);
 
         if (pin) {
             // Open space above the dock, so it sits at the bottom of the first screen.
@@ -1284,17 +1365,140 @@ public class HomeGrid implements SettingsPanel.Host {
         hs.addView(row, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        FrameLayout band = new FrameLayout(ctx);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(18));
-        bg.setColor(DOCK_BAND_COLOR);
+        LinearLayout band = new LinearLayout(ctx);
+        band.setOrientation(LinearLayout.VERTICAL);
+        GradientDrawable bg;
+        if (glass) {
+            // Frosted: a white wash that fades down, with a hairline light edge, like the pills.
+            bg = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[] { 0x38FFFFFF, 0x1FFFFFFF });
+            bg.setCornerRadius(dp(GLASS_PANEL_RADIUS_DP));
+            bg.setStroke(dp(1), 0x40FFFFFF);
+        } else {
+            bg = new GradientDrawable();
+            bg.setCornerRadius(dp(18));
+            bg.setColor(DOCK_BAND_COLOR);
+        }
         band.setBackground(bg);
-        band.addView(hs, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (hasBanners) {
+            band.addView(hs, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        } else {
+            rows.remove(hs);
+        }
+        if (hasIcons) {
+            if (hasBanners) {
+                View rule = new View(ctx);
+                rule.setBackgroundColor(0x2EFFFFFF);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
+                rlp.leftMargin = padH;
+                rlp.rightMargin = padH;
+                band.addView(rule, rlp);
+            }
+            band.addView(buildIconRow(icons, padH, iconPadV), new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        }
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         blp.bottomMargin = dp(DOCK_BOTTOM_DP);
         column.addView(band, blp);
+    }
+
+    /** The glass panel's second row: every other app as a round icon with its name under it. */
+    private View buildIconRow(List<AppModel.Item> icons, int padH, int padV) {
+        HorizontalScrollView hs = new CardRow(ctx);
+        hs.setHorizontalScrollBarEnabled(false);
+        hs.setClipToPadding(false);
+        rows.add(hs);
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setClipChildren(false);
+        row.setClipToPadding(false);
+        row.setPadding(padH, padV, padH, padV);
+        for (int i = 0; i < icons.size(); i++) {
+            AppModel.Item it = icons.get(i);
+            View unit = buildRoundIcon(it);
+            stopAt(cellsByKey.get(it.key()), i == 0, i == icons.size() - 1);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    dp(GLASS_ICON_W_DP), ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (i > 0) lp.leftMargin = dp(GLASS_ICON_GAP_DP);
+            row.addView(unit, lp);
+            dockKeys.add(it.key());
+        }
+        hs.addView(row, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return hs;
+    }
+
+    /**
+     * A disc and the name under it. Art that fills its edge (most Fire TV icons, an adaptive
+     * icon's shape) fills the disc; art on a transparent ground (a glyph, a round logo with
+     * margins) sits smaller on a white disc. A banner, for an app shown as a wide tile, is
+     * cropped to the disc.
+     */
+    private View buildRoundIcon(AppModel.Item it) {
+        FrameLayout cell = newCell(it);
+        roundCells.add(cell);
+        cell.setOutlineProvider(new android.view.ViewOutlineProvider() {
+            public void getOutline(View v, android.graphics.Outline o) {
+                o.setOval(0, 0, v.getWidth(), v.getHeight());
+            }
+        });
+        cell.setClipToOutline(true);
+        GradientDrawable disc = new GradientDrawable();
+        disc.setShape(GradientDrawable.OVAL);
+        disc.setColor(GLASS_DISC_COLOR);
+        cell.setBackground(disc);
+
+        int d = dp(GLASS_ICON_DP);
+        ImageView ic = new ImageView(ctx);
+        int size = d;
+        if (it.icon != null) {
+            ic.setImageBitmap(it.icon);
+            boolean fills = fillsEdge(it.icon);
+            ic.setScaleType(fills ? ImageView.ScaleType.CENTER_CROP : ImageView.ScaleType.FIT_CENTER);
+            if (!fills) size = d * 64 / 100;
+        } else if (it.banner != null) {
+            ic.setImageBitmap(it.banner);
+            ic.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        } else if (it.glyph != 0) {
+            ic.setImageResource(it.glyph);
+            ic.setColorFilter(GLASS_GLYPH_COLOR, android.graphics.PorterDuff.Mode.SRC_IN);
+            size = d * 52 / 100;
+        }
+        cell.addView(ic, new FrameLayout.LayoutParams(size, size, Gravity.CENTER));
+        // newCell styled it as a tile; now that it is round, give it the round rim.
+        style(cell, false);
+
+        TextView name = new TextView(ctx);
+        name.setText(it.label);
+        name.setTextColor(0xF2FFFFFF);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        name.setSingleLine(true);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setGravity(Gravity.CENTER_HORIZONTAL);
+        name.setShadowLayer(dp(3), 0, dp(1), 0x99000000);
+
+        LinearLayout unit = new LinearLayout(ctx);
+        unit.setOrientation(LinearLayout.VERTICAL);
+        unit.setGravity(Gravity.CENTER_HORIZONTAL);
+        unit.setClipChildren(false);
+        unit.addView(cell, new LinearLayout.LayoutParams(d, d));
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(GLASS_LABEL_DP));
+        nlp.topMargin = dp(6);
+        unit.addView(name, nlp);
+        return unit;
+    }
+
+    /** Whether the art is opaque a little in from its left edge, at mid height. */
+    private static boolean fillsEdge(Bitmap b) {
+        try {
+            return (b.getPixel(b.getWidth() * 15 / 100, b.getHeight() / 2) >>> 24) >= 0xE0;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /**
@@ -1315,9 +1519,12 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     /** Scrolls the dock so a focused end tile keeps the band's padding, its zoom uncut. */
-    private void revealInDock(final View cell) {
-        cell.post(new Runnable() {
+    private void revealInDock(final View focused) {
+        focused.post(new Runnable() {
             public void run() {
+                // A round icon sits in a column with its name; that column is what scrolls.
+                View cell = roundCells.contains(focused) && focused.getParent() instanceof View
+                        ? (View) focused.getParent() : focused;
                 if (!(cell.getParent() instanceof ViewGroup)) return;
                 ViewGroup row = (ViewGroup) cell.getParent();
                 if (!(row.getParent() instanceof HorizontalScrollView)) return;
@@ -1398,7 +1605,11 @@ public class HomeGrid implements SettingsPanel.Host {
      */
     private void buildTopBar() {
         topBar.removeAllViews();
+        // The glass design nests the clock and date here; free them for whichever bar is built.
+        clockBox.removeAllViews();
+        topBar.setGravity(Gravity.CENTER_VERTICAL);
         pillsByKey.clear();
+        barInputKeys.clear();
         // The dock design always has the bar: its clock, date and Settings pill.
         boolean bar = (dock || Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_BAR)
                 && !Prefs.simpleMode(ctx);
@@ -1424,27 +1635,56 @@ public class HomeGrid implements SettingsPanel.Host {
             return;
         }
 
-        // Clock and date at the left, the glass pills at the right.
-        clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34);
-        clock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        topBar.addView(clock);
-        if (showClock && Prefs.dateFormat(ctx) != Prefs.DATE_OFF) {
-            View rule = new View(ctx);
-            barRule = rule;
-            rule.setBackgroundColor(0x55FFFFFF);
-            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(dp(1), dp(30));
-            rlp.leftMargin = dp(16);
-            rlp.rightMargin = dp(16);
-            topBar.addView(rule, rlp);
-            dateText.setVisibility(View.VISIBLE);
-            dateText.setAlpha(0.8f);
-            topBar.addView(dateText);
+        boolean showDate = showClock && Prefs.dateFormat(ctx) != Prefs.DATE_OFF;
+        if (glass) {
+            // A large thin clock with the full date under it, the pills level with its top.
+            topBar.setGravity(Gravity.TOP);
+            clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 64);
+            clock.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
+            clockBox.addView(clock);
+            dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+            dateText.setLetterSpacing(0f);
+            dateText.setVisibility(showDate ? View.VISIBLE : View.GONE);
+            dateText.setAlpha(0.92f);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            dlp.leftMargin = dp(4);
+            clockBox.addView(dateText, dlp);
+            topBar.addView(clockBox);
         } else {
-            dateText.setVisibility(View.GONE);
+            // Clock and date at the left, the glass pills at the right.
+            clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 34);
+            clock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+            dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            dateText.setLetterSpacing(0.1f);
+            topBar.addView(clock);
+            if (showDate) {
+                View rule = new View(ctx);
+                barRule = rule;
+                rule.setBackgroundColor(0x55FFFFFF);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(dp(1), dp(30));
+                rlp.leftMargin = dp(16);
+                rlp.rightMargin = dp(16);
+                topBar.addView(rule, rlp);
+                dateText.setVisibility(View.VISIBLE);
+                dateText.setAlpha(0.8f);
+                topBar.addView(dateText);
+            } else {
+                dateText.setVisibility(View.GONE);
+            }
         }
         topBar.addView(spacer, slp);
 
         List<AppModel.Item> pills = new ArrayList<AppModel.Item>();
+        // The glass design puts the inputs up here, one press from anywhere on the first screen.
+        if (glass && Prefs.showInputs(ctx)) {
+            List<AppModel.Item> all = AppModel.visibleItems(ctx);
+            for (int i = 0; i < all.size() && barInputKeys.size() < GLASS_BAR_INPUTS; i++) {
+                if (all.get(i).type != AppModel.TYPE_INPUT) continue;
+                pills.add(all.get(i));
+                barInputKeys.add(all.get(i).key());
+            }
+        }
         // Shortcuts are pills only when placed in the bar. The dock design keeps the bar up
         // whatever the placement, and shortcuts placed as a row are cards in its grid.
         if (Prefs.shortcutsPlace(ctx) == Prefs.SHORTCUTS_BAR) {
@@ -1459,6 +1699,7 @@ public class HomeGrid implements SettingsPanel.Host {
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, dp(PILL_H_DP));
             if (i > 0) lp.leftMargin = dp(12);
+            if (glass) lp.topMargin = dp(14);
             View pill = buildPill(pills.get(i));
             pillsByKey.put(pills.get(i).key(), pill);
             // Nothing above the bar, and no jumping to a tile past either end of it.
@@ -1471,7 +1712,7 @@ public class HomeGrid implements SettingsPanel.Host {
         // The page scrolls below the bar, never behind it, and fades out as it nears it. The
         // padding keeps the first tile well clear of the pills when the page is at the top.
         updateClock();
-        setScrollTop(BAR_H_DP);
+        setScrollTop(glass ? GLASS_BAR_H_DP : BAR_H_DP);
         column.setPadding(dp(MARGIN_DP), dp(28), dp(MARGIN_DP), dp(BOTTOM_DP));
     }
 
@@ -1553,19 +1794,36 @@ public class HomeGrid implements SettingsPanel.Host {
 
         ImageView ic = new ImageView(ctx);
         ic.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        if (it.icon != null) ic.setImageBitmap(it.icon);
+        if (it.icon != null) {
+            ic.setImageBitmap(it.icon);
+        } else if (it.glyph != 0) {
+            // An input in the glass bar: its line glyph, in the label's colour.
+            ic.setImageResource(it.glyph);
+            ic.setColorFilter(0xF2FFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
+        }
         LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(20), dp(20));
         ilp.rightMargin = dp(8);
         row.addView(ic, ilp);
 
         TextView tv = new TextView(ctx);
-        tv.setText(shortLabel(it));
+        tv.setText(it.type == AppModel.TYPE_INPUT ? it.label : shortLabel(it));
         tv.setTextColor(0xF2FFFFFF);
         tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
         tv.setLetterSpacing(0.03f);
         tv.setSingleLine(true);
         row.addView(tv, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        if (it.connected) {
+            // The same green as the input cards' "connected", as a dot.
+            View dot = new View(ctx);
+            GradientDrawable g = new GradientDrawable();
+            g.setShape(GradientDrawable.OVAL);
+            g.setColor(0xFF7BD88F);
+            dot.setBackground(g);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(dp(7), dp(7));
+            dlp.leftMargin = dp(8);
+            row.addView(dot, dlp);
+        }
 
         cell.addView(row, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1889,7 +2147,7 @@ public class HomeGrid implements SettingsPanel.Host {
             // A rounded outline, so the lifted tile's shadow has the tile's shape.
             cell.setOutlineProvider(new android.view.ViewOutlineProvider() {
                 public void getOutline(View v, android.graphics.Outline o) {
-                    o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(8));
+                    o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), radius());
                 }
             });
         }
@@ -1944,11 +2202,14 @@ public class HomeGrid implements SettingsPanel.Host {
         return AppModel.SC_MORE.equals(it.cls) && !AppModel.amazonLauncherOn(ctx);
     }
 
+    /** A tile's corner radius in px: larger in the glass design. */
+    private int radius() { return dp(glass ? GLASS_RADIUS_DP : 8); }
+
     /** The preset's edge around an unfocused cell, or null when the preset has none. */
     private Drawable outline() {
         if (look == null || look.outline == 0) return null;
         GradientDrawable d = new GradientDrawable();
-        d.setCornerRadius(dp(8));
+        d.setCornerRadius(radius());
         d.setStroke(dp(1), look.outline);
         d.setColor(Color.TRANSPARENT);
         return d;
@@ -2028,11 +2289,13 @@ public class HomeGrid implements SettingsPanel.Host {
      * fully on screen, so neither is cut at the bottom edge.
      */
     private void dockStyle(final FrameLayout f, boolean focused, boolean animate) {
-        Drawable rim = outline();
+        boolean round = roundCells.contains(f);
+        Drawable rim = round ? null : outline();
         if (focused) {
             boolean lifted = moving != null && cellsByKey.get(moving) == f;
             GradientDrawable d = new GradientDrawable();
-            d.setCornerRadius(dp(8));
+            if (round) d.setShape(GradientDrawable.OVAL);
+            else d.setCornerRadius(radius());
             d.setStroke(dp(lifted ? 4 : 3), lifted ? MOVE_RING : Color.WHITE);
             d.setColor(Color.TRANSPARENT);
             rim = d;
@@ -2067,8 +2330,8 @@ public class HomeGrid implements SettingsPanel.Host {
         }
         // Dock tiles are kept in view by keepAtTop() and revealInDock(); scrolling for them
         // here too made the page jump on every move along the dock.
-        boolean inDock = f.getParent() != null
-                && ((View) f.getParent()).getParent() instanceof HorizontalScrollView;
+        boolean inDock = round || (f.getParent() != null
+                && ((View) f.getParent()).getParent() instanceof HorizontalScrollView);
         if (focused && animate && !inDock) {
             f.post(new Runnable() {
                 public void run() {
@@ -2107,13 +2370,24 @@ public class HomeGrid implements SettingsPanel.Host {
         });
     }
 
-    /** A TV app: full-bleed banner, already rounded in the bitmap. */
+    /** A TV app: full-bleed banner, clipped to the design's corner radius. */
     private View buildTile(AppModel.Item it) { return buildTile(it, false); }
 
     /** @param inDock on the dock's band, where the title line names the focused tile. */
     private View buildTile(AppModel.Item it, boolean inDock) {
         FrameLayout cell = newCell(it);
+        // The banner is kept square-cornered at twice its drawn size (AppModel), so the
+        // corners are cut here, at the radius the tile is drawn with. The name label hangs
+        // below the cell, so a grid tile clips only its image, not the cell.
+        final int r = radius();
+        android.view.ViewOutlineProvider rounded = new android.view.ViewOutlineProvider() {
+            public void getOutline(View v, android.graphics.Outline o) {
+                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), r);
+            }
+        };
         ImageView img = new ImageView(ctx);
+        img.setOutlineProvider(rounded);
+        img.setClipToOutline(true);
         img.setScaleType(ImageView.ScaleType.FIT_XY);
         img.setImageBitmap(it.banner);
         cell.addView(img, new FrameLayout.LayoutParams(
@@ -2148,7 +2422,7 @@ public class HomeGrid implements SettingsPanel.Host {
     private View buildCard(AppModel.Item it) {
         FrameLayout cell = newCell(it);
         GradientDrawable card = new GradientDrawable();
-        card.setCornerRadius(dp(8));
+        card.setCornerRadius(radius());
         boolean textTile = it.type == AppModel.TYPE_INPUT || it.type == AppModel.TYPE_LIVETV;
         // Live TV first: inputs go a quiet grey so only the Live TV tile stands out, and
         // app labels get larger and brighter.

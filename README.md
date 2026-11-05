@@ -16,10 +16,16 @@ Both pictures are from the same TV, a few minutes apart.
   three sections. No sponsored rows, no auto-playing trailers, no promoted tiles. **Row
   order** (Settings → Home screen) puts the rows in the order you want, TV apps first for
   example.
-- **Two designs** (Settings → Home screen → Design). **Classic** is the look above and the
+- **Three designs** (Settings → Home screen → Design). **Classic** is the look above and the
   default. **Dock** puts the first of your TV apps on a band at the bottom of the first
   screen, with a glow in the selected app's colour and everything else in one grid below;
-  the clock and Settings sit in a bar at the top. **Dock size** sets how big its tiles are.
+  the clock and Settings sit in a bar at the top. **Glass** grows that band into a frosted
+  panel over a landscape: TV apps on top, every other app below them as round icons, a large
+  clock and the date at the top left, the inputs and Settings as pills at the top right.
+  **Dock size** sets how big the banner tiles are in both.
+- **Sharp artwork.** Banners and icons are read at the highest density each app ships and
+  kept at twice their drawn size, so they stay crisp after Fire OS scales the 1080p home
+  screen up to 4K.
 - **The Home button comes here.** Pressing Home opens Homestead in about 170 ms instead of
   Amazon's home screen.
 - **HDMI and Composite inputs as tiles**, so switching source is one press from home.
