@@ -347,6 +347,8 @@ public class HomeGrid implements SettingsPanel.Host {
         clock = new TextView(c);
         clock.setTextColor(Color.WHITE);
         clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        // Digits of one width, so the clock does not shift as the minutes change.
+        clock.setFontFeatureSettings("tnum");
         // The clock, with the settings pills to its left when that shortcut row is chosen.
         dateText = new TextView(c);
         dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
@@ -479,7 +481,8 @@ public class HomeGrid implements SettingsPanel.Host {
     /** Header and clock colour; on a photo, a soft shadow keeps them readable. */
     private void paintText(TextView t) {
         t.setTextColor(look.text);
-        if (look == Backgrounds.PHOTO_LOOK) t.setShadowLayer(dp(4), 0, dp(1), 0xCC000000);
+        // A tight shadow: a wide one haloes the letters, which reads as blur on a large TV.
+        if (look == Backgrounds.PHOTO_LOOK) t.setShadowLayer(dp(2), 0, dp(1), 0xB3000000);
         else t.setShadowLayer(0, 0, 0, 0);
     }
 
@@ -1516,7 +1519,7 @@ public class HomeGrid implements SettingsPanel.Host {
         name.setSingleLine(true);
         name.setEllipsize(TextUtils.TruncateAt.END);
         name.setGravity(Gravity.CENTER_HORIZONTAL);
-        name.setShadowLayer(dp(3), 0, dp(1), 0x99000000);
+        name.setShadowLayer(dp(2), 0, dp(1), 0x99000000);
 
         LinearLayout unit = new LinearLayout(ctx);
         unit.setOrientation(LinearLayout.VERTICAL);
@@ -1711,8 +1714,13 @@ public class HomeGrid implements SettingsPanel.Host {
             // A large thin clock with the full date under it, the pills level with its top.
             topBar.setGravity(Gravity.TOP);
             clock.setTextSize(TypedValue.COMPLEX_UNIT_SP, 64);
-            clock.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
-            clockBox.addView(clock);
+            // Light, not thin: a hairline stroke is a pixel wide at 1080p and goes soft when
+            // the TV scales it up to 4K.
+            clock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+            // Wrap, not the column's default match-parent: a matched TextView keeps its width
+            // when the text changes, so a wider time (01:49 to 01:51) lost its last digit.
+            clockBox.addView(clock, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             dateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
             dateText.setLetterSpacing(0f);
             dateText.setVisibility(showDate ? View.VISIBLE : View.GONE);
