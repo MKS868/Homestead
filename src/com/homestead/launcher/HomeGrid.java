@@ -1813,13 +1813,18 @@ public class HomeGrid implements SettingsPanel.Host {
     }
 
     private static final int PILL_H_DP = 40;
+    /** Pill icons and labels are sized for a large TV across a room, not a monitor. */
+    private static final int PILL_ICON_DP = 24;
+    private static final float PILL_STROKE = 0.085f;
+    private static final int PILL_TEXT_SP = 15;
 
     private AppModel.Item barItem(String action, String label, String icon) {
         AppModel.Item it = new AppModel.Item();
         it.type = AppModel.TYPE_SHORTCUT;
         it.label = label;
         it.cls = action;
-        it.icon = ShortcutIcons.render(icon, dp(40));
+        // At the exact size the pill draws it, so it is not resampled, and with a bold line.
+        it.icon = ShortcutIcons.render(icon, dp(PILL_ICON_DP), PILL_STROKE);
         return it;
     }
 
@@ -1878,17 +1883,19 @@ public class HomeGrid implements SettingsPanel.Host {
         } else if (it.glyph != 0) {
             // An input in the glass bar: its line glyph, in the label's colour.
             ic.setImageResource(it.glyph);
-            ic.setColorFilter(0xF2FFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
+            ic.setColorFilter(Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
         }
-        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(20), dp(20));
-        ilp.rightMargin = dp(8);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(PILL_ICON_DP), dp(PILL_ICON_DP));
+        ilp.rightMargin = dp(10);
         row.addView(ic, ilp);
 
         TextView tv = new TextView(ctx);
         tv.setText(it.type == AppModel.TYPE_INPUT ? it.label : shortLabel(it));
-        tv.setTextColor(0xF2FFFFFF);
-        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-        tv.setLetterSpacing(0.03f);
+        tv.setTextColor(Color.WHITE);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, PILL_TEXT_SP);
+        // Medium weight: regular strokes are two pixels at 1080p and go soft when scaled to 4K.
+        tv.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        tv.setLetterSpacing(0.02f);
         tv.setSingleLine(true);
         row.addView(tv, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));

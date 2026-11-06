@@ -27,15 +27,26 @@ final class ShortcutIcons {
 
     private ShortcutIcons() { }
 
+    /** The stroke as a share of the icon's size; bolder for small icons, see render(id, px, w). */
+    private static final float STROKE = 0.06f;
+
     /** A square bitmap of the icon for a screen id (see FireTvSettingsPanel). */
     static Bitmap render(String id, int px) {
+        return render(id, px, STROKE);
+    }
+
+    /**
+     * @param stroke line width as a share of px. A small icon needs a heavier one: at 1080p a
+     *        line under 3 px turns grey and soft once the TV scales the picture up to 4K.
+     */
+    static Bitmap render(String id, int px, float stroke) {
         Bitmap b = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(b);
         float s = px;
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
         line.setColor(INK);
         line.setStyle(Paint.Style.STROKE);
-        line.setStrokeWidth(s * 0.06f);
+        line.setStrokeWidth(s * stroke);
         line.setStrokeCap(Paint.Cap.ROUND);
         line.setStrokeJoin(Paint.Join.ROUND);
         Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
