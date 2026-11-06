@@ -35,6 +35,9 @@ final class AppArt {
         { "com.amazon.smarthomemapviewapp", "smarthome", 0xFF1BB4E8, 0xFF0A5788 }, // 48 px
     };
 
+    /** The line icons' stroke, as a share of their size; ShortcutIcons' own is 0.06. */
+    private static final float GLYPH_STROKE = 0.09f;
+
     private static final int GENERIC_TOP = 0xFF5A6675;
     private static final int GENERIC_BOTTOM = 0xFF2A313A;
 
@@ -92,7 +95,8 @@ final class AppArt {
         bg.setShader(new LinearGradient(0, 0, px, px, top, bottom, Shader.TileMode.CLAMP));
         c.drawRect(0, 0, px, px, bg);
         int g = Math.round(px * 0.56f);
-        Bitmap line = ShortcutIcons.render(glyph, g);
+        // Bold: these sit small in the glass row, where the usual hairline goes soft at 4K.
+        Bitmap line = ShortcutIcons.render(glyph, g, GLYPH_STROKE);
         c.drawBitmap(line, (px - g) / 2f, (px - g) / 2f, new Paint(Paint.FILTER_BITMAP_FLAG));
         line.recycle();
         return b;

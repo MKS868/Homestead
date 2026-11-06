@@ -1514,8 +1514,9 @@ public class HomeGrid implements SettingsPanel.Host {
 
         TextView name = new TextView(ctx);
         name.setText(it.label);
-        name.setTextColor(0xF2FFFFFF);
-        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        name.setTextColor(Color.WHITE);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        name.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         name.setSingleLine(true);
         name.setEllipsize(TextUtils.TruncateAt.END);
         name.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -1526,8 +1527,13 @@ public class HomeGrid implements SettingsPanel.Host {
         unit.setGravity(Gravity.CENTER_HORIZONTAL);
         unit.setClipChildren(false);
         unit.addView(cell, new LinearLayout.LayoutParams(d, d));
+        // The name may reach a quarter of the gap into each side, so the larger type keeps
+        // about as many letters as the old smaller one did and neighbours still stand apart.
+        int reach = dp(GLASS_ICON_GAP_DP) / 4;
         LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(GLASS_LABEL_DP));
+                dp(GLASS_ICON_W_DP) + 2 * reach, dp(GLASS_LABEL_DP));
+        nlp.leftMargin = -reach;
+        nlp.rightMargin = -reach;
         nlp.topMargin = dp(6);
         unit.addView(name, nlp);
         return unit;
